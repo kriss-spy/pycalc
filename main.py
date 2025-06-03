@@ -2,6 +2,7 @@
 # 1+2*3-5
 # use stack
 
+
 operators = ["+", "-", "*", "/"]
 priorities = {"*": 1, "/": 1, "+": 2, "-": 2}
 use_parenthesis = False  # add support to ()
@@ -9,29 +10,16 @@ separate_cli = (
     False  # always display the equation on top, always input at the bottom line)
 )
 
-
-class stack:
-    li = list()
-
-    def __init__(self):
-        pass
-
-    def get_li(self):
-        return stack.li
-
-    def push(self, val):
-        self.li.append(val)
-
-    def top(self):
-        return self.li[-1]
-
-    def pop(self):
-        foo = self.li[-1]
-        del self.li[-1]
-        return foo
-
-    def size(self):
-        return len(self.li)
+from helper import (
+    bye,
+    get_input,
+    print_ans,
+    print_error,
+    print_welcome,
+    debug_log,
+    stack,
+    test_case,
+)
 
 
 def print_help():
@@ -46,42 +34,6 @@ def print_help():
     print(help_msg)
 
 
-def print_error(*args):
-    if len(args) == 0:
-        print("something is wrong")
-        return
-    prompt = args[0]
-    start_msg = "[ERROR]"
-    msgs = {
-        "not num": "input is not a number",
-        "missing op": "op missing",
-        "missing a": "first operand missing",
-        "invalid input": "input is invalid",
-        "ans none": "answer doesn't exist",
-        "zero division": "zero division",
-    }
-    if prompt not in msgs.keys():
-        print("something is wrong")
-        return
-
-    print(start_msg + msgs[prompt])
-
-
-def print_welcome():
-    welcome_msg = """
-welcome to pycalc, a simple cli calculator app
-    """
-    print(welcome_msg)
-
-
-def bye():
-    bye_msg = """
-bye!
-    """
-    print(bye_msg)
-    exit()
-
-
 def atom_calc(a, b, op):
     # assuming params are valid
     if op == "+":
@@ -91,28 +43,33 @@ def atom_calc(a, b, op):
     elif op == "*":
         return a * b
     elif op == "/":
-        print(a, "/", b, "=")
         if b == 0 or b == "0":
             print_error("zero division")
             return None
+        return a / b
 
 
 def equation_split(s):
     res = []
+    s = s.replace(" ", "")
     l = 0
     while l < len(s):
-        if is_digit(s[l]):
+        if str_is_number(s[l]):
             r = l + 1
-            while r < len(s) and (is_digit(s[r]) or s[r] == "."):
+            while r < len(s) and (str_is_number(s[r]) or s[r] == "."):
                 r += 1
+            res.append(s[l:r])
+            l = r - 1
+        elif s[l] == "-":
+            r = l + 1
+            while r < len(s) and (str_is_number(s[r]) or s[r] == "."):
+                r += 1
+            if l >= 1 and str_is_number(s[l - 1]):
+                res.append("+")
             res.append(s[l:r])
             l = r - 1
         else:
-            r = l + 1
-            while r < len(s) and not is_digit(s[r]):
-                r += 1
-            res.append(s[l:r])
-            l = r - 1
+            res.append(s[l])
 
         l += 1
 
@@ -124,25 +81,27 @@ def calc(s):
     ans = 0
     st = stack()
     symbols = equation_split(s)
-    prev_is_digit = False
+    if __debug__:
+        debug_log(symbols)
+    prev_is_number = str_is_op(symbols[0])
 
     # check input validity
     for i in range(len(symbols)):
-        if not prev_is_digit and is_digit(symbols[i]):
-            prev_is_digit = True
-            symbols[i] = to_digit(symbols[i])
-        elif prev_is_digit and is_op(symbols[i]):
-            prev_is_digit = False
+        if not prev_is_number and str_is_number(symbols[i]):
+            prev_is_number = True
+            symbols[i] = to_number(symbols[i])
+        elif prev_is_number and str_is_op(symbols[i]):
+            prev_is_number = False
         else:
             return ans, False
 
     for sym in symbols:
-        if st.size() == 0 and is_op(sym):
+        if st.size() == 0 and str_is_op(sym) and priorities[sym] == 1:
             return ans, False
         elif st.size() == 0:
             st.push(sym)
         else:
-            if is_op(sym):
+            if str_is_op(sym):
                 st.push(sym)
             else:
                 if priorities[st.top()] == 1:
@@ -152,23 +111,28 @@ def calc(s):
                     if atom_ans == None:
                         return ans, False
                     st.push(atom_ans)
-    nums = [sym for sym in st.get_li() if not is_op(sym)]
+                elif priorities[st.top()] == 2:
+                    st.push(sym)
+
     if __debug__:
-        print(nums)
+        debug_log(st.get_li())
+    nums = [sym for sym in st.get_li() if not str_is_op(sym)]
+    if __debug__:
+        debug_log(nums)
     ans = sum(nums)
 
     return ans, is_valid
 
 
-def is_digit(s):
+def str_is_number(s):
     # supported number:
     # integer
     # float
 
-    return is_integer(s) or is_float(s)
+    return str_is_integer(s) or str_is_float(s)
 
 
-def is_pos_integer(s):
+def str_is_pos_integer(s):
     if len(s) == 0:
         return False
     if len(s) > 1 and s[0] == "0":
@@ -180,11 +144,11 @@ def is_pos_integer(s):
     return True
 
 
-def is_integer(s):
+def str_is_integer(s):
     if len(s) == 0:
         return False
     if s[0] == "-":
-        return is_pos_integer(s[1:])
+        return str_is_pos_integer(s[1:])
     if len(s) > 1 and s[0] == "0":
         return False
     for c in s:
@@ -194,11 +158,13 @@ def is_integer(s):
     return True
 
 
-def is_float(s):
+def str_is_float(s):
     # xxx.xxxx ok
     # .xxx not ok
     if len(s) == 0:
         return False
+    if s[0] == "-":
+        return str_is_float(s[1:])
     dot_cnt = 0
     for c in s:
         if c == ".":
@@ -213,69 +179,52 @@ def is_float(s):
     return True
 
 
-def is_op(s):
+def str_is_op(s):
     return s in operators
 
 
-def to_digit(s):
-    if is_integer(s):
+def to_number(s):
+    if str_is_integer(s):
         return int(s)
-    elif is_float(s):
+    elif str_is_float(s):
         return float(s)
     else:
         print_error()
 
 
-def get_input():
-    print("> ", end="")
-    s = input()
-    return s
-
-
-def print_ans(ans):
-    print(ans)
-
-
 def main_loop(ans):
     s = get_input()
     if s == "":
+        print_ans(ans)
         return ans
     elif s == "h" or s == "help":
         print_help()
         return ans
     elif s == "ans":
         if ans != None:
+            print_ans(ans)
             return ans
         else:
             print_error("ans none")
             return None
     elif s == "q" or s == "quit":
         bye()
-    # elif is_digit(s):
-    #     if a == None:
-    #         a = to_digit(s)
-    #     elif op != None:
-    #         b = to_digit(s)
-    #         ans = calc(a, b, op)
-    #         a = None
-    #         b = None
-    #         op = None
-    #         print(ans)
-    #     else:
-    #         print_error("missing op")
-    # elif is_op(s):
-    #     if a != None:
-    #         op = s
-    #     else:
-    #         print_error("missing a")
-
     else:
         old_ans = ans
         ans, is_valid = calc(s)
         if not is_valid:
             print_error("invalid input")
             return old_ans
+        print_ans(ans)
         return ans
+
+
+def test():
+    cases = test_case.split("\n")
+    print(cases)
+    cases = [case for case in cases if case != ""]
+    for case in cases:
+        print(case, " = ", calc(case))
 
 
 def main():
@@ -283,8 +232,7 @@ def main():
     ans = None
     while True:
         ans = main_loop(ans)
-        if ans != None:
-            print_ans(ans)
 
 
+# test()
 main()
