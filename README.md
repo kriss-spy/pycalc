@@ -17,6 +17,7 @@ no pre configure inside code needed
 ### v2
 
 add feature: parse input string like "1+2*3"
+add feature: support for parenthesis: "()"
 
 ### v3
 
