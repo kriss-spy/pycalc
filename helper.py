@@ -16,6 +16,7 @@ def print_error(*args):
         "invalid input": "input is invalid",
         "ans none": "answer doesn't exist",
         "zero division": "zero division",
+        "parenthesis": "parenthesis error in input",
     }
     if prompt not in msgs.keys():
         print("something is wrong")
@@ -37,6 +38,21 @@ bye!
     """
     print(bye_msg)
     exit()
+
+
+class parenthesis_elem:
+    is_open = True
+    idx = 0
+
+    def __init__(self, p, idx):
+        self.is_open = p == "("
+        self.idx = idx
+
+    def open(self):
+        return self.is_open
+
+    def get_idx(self):
+        return self.idx
 
 
 class stack:
@@ -61,6 +77,40 @@ class stack:
 
     def size(self):
         return len(self.li)
+
+    def empty(self):
+        return len(self.li) == 0
+
+
+class parenthesis_stack:  # TODO check
+    st = stack()
+
+    def __init__(self):
+        self.st = stack()
+
+    def push(self, p, idx):
+        if self.empty() and p == ")":
+            return None, False
+        elif self.empty():
+            self.st.push(parenthesis_elem(p, idx))
+            return None, True
+        elif p == ")" and self.top().open():
+            return self.pop(), True
+        else:
+            self.st.push(parenthesis_elem(p, idx))
+            return None, True
+
+    def top(self):
+        return self.st.top()
+
+    def pop(self):
+        return self.st.pop()
+
+    def empty(self):
+        return self.st.empty()
+
+    def get_str(self):
+        return "".join([("(" if p.open() else ")") for p in self.st.get_li()])
 
 
 def get_input():

@@ -1,7 +1,5 @@
-# v2
-# 1+2*3-5
-# use stack
-
+# v2.2
+# support parenthesis ()
 
 operators = ["+", "-", "*", "/"]
 priorities = {"*": 1, "/": 1, "+": 2, "-": 2}
@@ -18,6 +16,7 @@ from helper import (
     print_welcome,
     debug_log,
     stack,
+    parenthesis_stack,
     test_case,
 )
 
@@ -34,7 +33,7 @@ def print_help():
     print(help_msg)
 
 
-def atom_calc(a, b, op):
+def atom_calc(a, b, op):  # TODO fix float
     # assuming params are valid
     if op == "+":
         return a + b
@@ -77,9 +76,30 @@ def equation_split(s):
 
 
 def calc(s):
-    is_valid = True
     ans = 0
     st = stack()
+
+    # process parenthesis
+    pst = parenthesis_stack()
+    i = 0
+    while i < len(s):
+        if s[i] in "()":
+            match_p, flag = pst.push(s[i], i)
+            if not flag:
+                print_error("parenthesis")
+                return ans, False
+            if match_p != None:
+                sub_ans, flag = calc(s[match_p.idx + 1 : i])
+                if not flag:
+                    return ans, False
+                s = s[: match_p.idx] + str(sub_ans) + s[i + 1 :]
+                i = match_p.idx - 1
+
+        i += 1
+    if __debug__:
+        debug_log("parenthesis processing finished for " + s)
+
+    # calculate simple equation
     symbols = equation_split(s)
     if __debug__:
         debug_log(symbols)
@@ -121,7 +141,7 @@ def calc(s):
         debug_log(nums)
     ans = sum(nums)
 
-    return ans, is_valid
+    return ans, True
 
 
 def str_is_number(s):
@@ -225,6 +245,15 @@ def test():
     cases = [case for case in cases if case != ""]
     for case in cases:
         print(case, " = ", calc(case))
+
+
+def parenthesis_stack_test():
+    pst = parenthesis_stack()
+    s = ")(())"
+    for i in range(len(s)):
+        print(pst.push(s[i], i))
+        print(pst.get_str())
+        print()
 
 
 def main():
