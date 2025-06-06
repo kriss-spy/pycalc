@@ -1,14 +1,20 @@
-def debug_log(s):
+from rich import print as rprint
+
+
+def debug_log(*args):
     print("[DEBUG]", end="")
-    print(s)
+    rprint(*args)
 
 
-def print_error(*args):
+def print_error(*args):  # TODO rich
     if len(args) == 0:
         print("something is wrong")
         return
     prompt = args[0]
     start_msg = "[ERROR]"
+    extra_msg = ""
+    if len(args) > 1:
+        extra_msg = args[1]
     msgs = {
         "not num": "input is not a number",
         "missing op": "op missing",
@@ -22,10 +28,10 @@ def print_error(*args):
         print("something is wrong")
         return
 
-    print(start_msg + msgs[prompt])
+    print(start_msg + msgs[prompt] + ";" + extra_msg)
 
 
-def print_welcome():
+def print_welcome():  # TODO rich
     welcome_msg = """
 welcome to pycalc, a simple cli calculator app
     """
@@ -119,8 +125,8 @@ def get_input():
     return s
 
 
-def print_ans(ans):
-    print(ans)
+def print_ans(*args):
+    rprint(*args)
 
 
 test_case = """

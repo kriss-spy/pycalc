@@ -1,6 +1,9 @@
 # v2.2
 # support parenthesis ()
 
+import sys
+
+
 operators = ["+", "-", "*", "/"]
 priorities = {"*": 1, "/": 1, "+": 2, "-": 2}
 use_parenthesis = False  # add support to ()
@@ -133,10 +136,21 @@ def calc(s):
                     st.push(atom_ans)
                 elif priorities[st.top()] == 2:
                     st.push(sym)
-
+    li = st.get_li()
     if __debug__:
-        debug_log(st.get_li())
-    nums = [sym for sym in st.get_li() if not str_is_op(sym)]
+        debug_log(li)
+    i = 0
+    while i < len(li):
+        if li[i] == "-":
+            if li[i + 1] == "-":
+                # li = li[:i] + li[i + 2 :]
+                # i -= 1
+                i += 1
+            elif isinstance(li[i + 1], (int, float)):
+                li[i + 1] *= -1
+
+        i += 1
+    nums = [sym for sym in li if not str_is_op(sym)]
     if __debug__:
         debug_log(nums)
     ans = sum(nums)
@@ -244,7 +258,7 @@ def test():
     print(cases)
     cases = [case for case in cases if case != ""]
     for case in cases:
-        print(case, " = ", calc(case))
+        print_ans(case, " = ", calc(case))
 
 
 def parenthesis_stack_test():
@@ -263,5 +277,13 @@ def main():
         ans = main_loop(ans)
 
 
-# test()
-main()
+if len(sys.argv) > 1:
+    for i in range(1, len(sys.argv)):
+        ans, flag = calc(sys.argv[i])
+        if flag:
+            print_ans(sys.argv[i], " = ", ans)
+        else:
+            print_error("invalid input", " " + sys.argv[i])
+else:
+    # test()
+    main()

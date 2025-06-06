@@ -1,5 +1,5 @@
+from rich import inspect
+import numpy
 
-if __debug__:
-    print("Verbosity enabled")
-
-print("hello")
+# inspect(numpy)
+help(numpy)
