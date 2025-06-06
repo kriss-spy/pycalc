@@ -1,9 +1,15 @@
-# v2.2
-# support parenthesis ()
+# v3.0
+# argparse design
+# no arg: enter REPL
+# -h or --help: print help
+# -v or --version: print version
+# -d or --debug: print debug info
+# --verbose: print intermediate process, not only the result of calc() # TODO
+# several strings: calc() and print_ans() each
 
-import sys
+# import sys
 
-
+DEBUG = False
 operators = ["+", "-", "*", "/"]
 priorities = {"*": 1, "/": 1, "+": 2, "-": 2}
 use_parenthesis = False  # add support to ()
@@ -99,12 +105,12 @@ def calc(s):
                 i = match_p.idx - 1
 
         i += 1
-    if __debug__:
+    if DEBUG:
         debug_log("parenthesis processing finished for " + s)
 
     # calculate simple equation
     symbols = equation_split(s)
-    if __debug__:
+    if DEBUG:
         debug_log(symbols)
     prev_is_number = str_is_op(symbols[0])
 
@@ -137,10 +143,10 @@ def calc(s):
                 elif priorities[st.top()] == 2:
                     st.push(sym)
     li = st.get_li()
-    if __debug__:
+    if DEBUG:
         debug_log(li)
     i = 0
-    while i < len(li):
+    while i + 1 < len(li):
         if li[i] == "-":
             if li[i + 1] == "-":
                 # li = li[:i] + li[i + 2 :]
@@ -151,7 +157,10 @@ def calc(s):
 
         i += 1
     nums = [sym for sym in li if not str_is_op(sym)]
-    if __debug__:
+    if len(nums) == 0:
+        print_error("invalid input")
+        return ans, False
+    if DEBUG:
         debug_log(nums)
     ans = sum(nums)
 
@@ -277,13 +286,40 @@ def main():
         ans = main_loop(ans)
 
 
-if len(sys.argv) > 1:
-    for i in range(1, len(sys.argv)):
-        ans, flag = calc(sys.argv[i])
+from typing import List
+import argparse
+
+parser = argparse.ArgumentParser(description="simple python cli program")
+# __version_info__ = ("2013", "03", "14")
+# __version__ = "-".join(__version_info__)
+__version__ = "3.0"
+parser.add_argument(
+    "-v", "--version", action="version", version="%(prog)s " + __version__
+)
+
+parser.add_argument(
+    "input",
+    metavar="input",
+    type=str,
+    nargs="+",
+    help="one or several optional input strings to calculate",
+)
+
+parser.add_argument(
+    "-d", "--debug", default=False, type=bool, help="toggle debug output"
+)
+
+args = parser.parse_args()
+
+DEBUG = args.debug
+
+if args.input:
+    for s in args.input:
+        ans, flag = calc(s)
         if flag:
-            print_ans(sys.argv[i], " = ", ans)
+            print_ans(s, " = ", ans)
         else:
-            print_error("invalid input", " " + sys.argv[i])
+            print_error("invalid input", " " + s)
 else:
     # test()
     main()

@@ -88,7 +88,7 @@ class stack:
         return len(self.li) == 0
 
 
-class parenthesis_stack:  # TODO check
+class parenthesis_stack:
     st = stack()
 
     def __init__(self):
